@@ -1,1 +1,1 @@
-# mazon-sql-queries
+# Amazon-sql-queries

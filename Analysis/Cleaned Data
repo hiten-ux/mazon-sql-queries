@@ -1,0 +1,180 @@
+use amazon;
+CREATE VIEW seller_order_counts AS
+SELECT sellers.seller_state, COUNT(DISTINCT order_items.order_id) AS total_orders
+FROM order_items
+JOIN sellers ON order_items.seller_id = sellers.seller_id
+GROUP BY sellers.seller_state;
+
+SELECT seller_state, total_orders,
+RANK() OVER (ORDER BY total_orders DESC) AS state_rank
+FROM seller_order_counts
+ORDER BY total_orders DESC;
+
+
+CREATE VIEW category_order_revenue AS
+SELECT products.product_category_name AS category, orders.order_purchase_timestamp, order_items.price AS revenue
+FROM order_items
+JOIN orders ON order_items.order_id = orders.order_id
+JOIN products ON order_items.product_id = products.product_id;
+
+SELECT category, order_purchase_timestamp, revenue,
+SUM(revenue) OVER (PARTITION BY category ORDER BY order_purchase_timestamp) AS cumulative_revenue
+FROM category_order_revenue
+ORDER BY category, order_purchase_timestamp;
+
+
+CREATE VIEW payment_type_summary AS
+SELECT payment_type, COUNT(*) AS times_used, AVG(payment_value) AS avg_order_value
+FROM order_payments
+GROUP BY payment_type;
+
+SELECT payment_type, times_used, avg_order_value,
+RANK() OVER (ORDER BY times_used DESC) AS usage_rank
+FROM payment_type_summary
+ORDER BY times_used DESC;
+
+
+CREATE VIEW customer_total_spend AS
+SELECT customers.customer_unique_id, SUM(order_payments.payment_value) AS total_spent
+FROM orders
+JOIN order_payments ON orders.order_id = order_payments.order_id
+JOIN customers ON orders.customer_id = customers.customer_id
+GROUP BY customers.customer_unique_id;
+
+SELECT customer_unique_id, total_spent
+FROM (
+    SELECT customer_unique_id, total_spent,
+    RANK() OVER (ORDER BY total_spent DESC) AS spend_rank
+    FROM customer_total_spend
+) ranked_customers
+WHERE spend_rank = 1;
+
+
+CREATE VIEW category_review_scores AS
+SELECT products.product_category_name AS category, AVG(order_reviews.review_score) AS avg_review_score
+FROM order_reviews
+JOIN order_items ON order_reviews.order_id = order_items.order_id
+JOIN products ON order_items.product_id = products.product_id
+GROUP BY products.product_category_name;
+
+SELECT category, avg_review_score,
+RANK() OVER (ORDER BY avg_review_score DESC) AS category_rank
+FROM category_review_scores
+ORDER BY avg_review_score DESC;
+
+
+CREATE VIEW customer_orders_by_state AS
+SELECT customers.customer_state, customers.customer_unique_id, COUNT(orders.order_id) AS total_orders
+FROM customers
+JOIN orders ON customers.customer_id = orders.customer_id
+GROUP BY customers.customer_state, customers.customer_unique_id;
+
+SELECT customer_state, customer_unique_id, total_orders,
+RANK() OVER (PARTITION BY customer_state ORDER BY total_orders DESC) AS rank_in_state
+FROM customer_orders_by_state
+ORDER BY customer_state, total_orders DESC;
+
+
+CREATE VIEW sellers_without_orders AS
+SELECT seller_id
+FROM sellers
+WHERE NOT EXISTS (
+    SELECT 1 FROM order_items WHERE order_items.seller_id = sellers.seller_id
+);
+
+SELECT seller_id
+FROM sellers_without_orders;
+
+
+CREATE VIEW category_revenue AS
+SELECT products.product_category_name AS category, SUM(order_items.price) AS total_revenue
+FROM order_items
+JOIN products ON order_items.product_id = products.product_id
+GROUP BY products.product_category_name;
+
+SELECT category, total_revenue
+FROM (
+    SELECT category, total_revenue,
+    RANK() OVER (ORDER BY total_revenue DESC) AS revenue_rank
+    FROM category_revenue
+) ranked_categories
+WHERE revenue_rank <= 5;
+
+
+CREATE VIEW order_delivery_days AS
+SELECT DATEDIFF(order_delivered_customer_date, order_purchase_timestamp) AS delivery_days
+FROM orders
+WHERE order_delivered_customer_date IS NOT NULL;
+
+SELECT AVG(delivery_days) AS median_delivery_days
+FROM (
+    SELECT delivery_days,
+    ROW_NUMBER() OVER (ORDER BY delivery_days) AS row_num,
+    COUNT(*) OVER () AS total_rows
+    FROM order_delivery_days
+) ranked_delivery
+WHERE row_num IN (FLOOR((total_rows + 1) / 2), FLOOR((total_rows + 2) / 2));
+
+
+CREATE VIEW products_without_orders AS
+SELECT product_id
+FROM products
+WHERE NOT EXISTS (
+    SELECT 1 FROM order_items WHERE order_items.product_id = products.product_id
+);
+
+SELECT product_id
+FROM products_without_orders;
+
+
+CREATE VIEW seller_order_totals AS
+SELECT seller_id, COUNT(DISTINCT order_id) AS total_orders
+FROM order_items
+GROUP BY seller_id;
+
+SELECT seller_id, total_orders
+FROM (
+    SELECT seller_id, total_orders,
+    AVG(total_orders) OVER () AS avg_orders
+    FROM seller_order_totals
+) seller_avg_comparison
+WHERE total_orders > avg_orders;
+
+
+CREATE VIEW state_review_scores AS
+SELECT customers.customer_state, AVG(order_reviews.review_score) AS avg_review_score
+FROM order_reviews
+JOIN orders ON order_reviews.order_id = orders.order_id
+JOIN customers ON orders.customer_id = customers.customer_id
+GROUP BY customers.customer_state;
+
+SELECT customer_state, avg_review_score,
+RANK() OVER (ORDER BY avg_review_score DESC) AS state_rank
+FROM state_review_scores
+ORDER BY avg_review_score DESC;
+
+
+CREATE VIEW customers_without_reviews AS
+SELECT DISTINCT customers.customer_unique_id
+FROM customers
+JOIN orders ON customers.customer_id = orders.customer_id
+WHERE NOT EXISTS (
+    SELECT 1 FROM order_reviews WHERE order_reviews.order_id = orders.order_id
+);
+
+SELECT customer_unique_id
+FROM customers_without_reviews;
+
+
+CREATE VIEW monthly_order_counts AS
+SELECT DATE_FORMAT(order_purchase_timestamp, '%Y-%m') AS order_month, COUNT(*) AS total_orders
+FROM orders
+GROUP BY order_month;
+
+SELECT order_month, total_orders
+FROM (
+    SELECT order_month, total_orders,
+    RANK() OVER (ORDER BY total_orders DESC) AS month_rank
+    FROM monthly_order_counts
+) ranked_months
+WHERE month_rank = 1;

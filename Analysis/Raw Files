@@ -1,0 +1,9 @@
+# Raw Dataset
+
+🔗 **Kaggle link:** https://www.kaggle.com/datasets/hisolanki/amazon-sql
+
+## Why the raw data isn't in this repo
+
+The original SQL dump is about 138 MB, which is too large to upload directly to GitHub — GitHub's web upload limit is 25 MB per file, and even splitting it into smaller parts wasn't a clean way to share a single usable database file. Instead of uploading fragmented or compressed pieces, I uploaded the full dataset to Kaggle, where it can be downloaded as one complete file.
+
+To reproduce the analysis, download the dataset from the Kaggle link above, import it into MySQL, and then run the queries in `Analysis/Cleaned Data`.

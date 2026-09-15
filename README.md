@@ -9,7 +9,9 @@ I worked through 14 business scenarios end-to-end — starting from the stakehol
 
 ## 🗂️ Dataset
 
-Public Olist Brazilian E-Commerce dataset, structured into a MySQL schema with the following tables:
+📦 **Full dataset (MySQL dump):** the Kaggle link is in [`Analysis/Raw File`](Analysis/Raw%20File)
+
+Based on the public Olist Brazilian E-Commerce dataset, structured into a MySQL schema with the following tables:
 
 - `customers`
 - `orders`
@@ -19,6 +21,8 @@ Public Olist Brazilian E-Commerce dataset, structured into a MySQL schema with t
 - `products`
 - `sellers`
 - `product_category_name_translation`
+
+Download the dataset from the link in `Analysis/Raw File` and import it into MySQL before running the queries in `Analysis/Cleaned Data`.
 
 ## ❓ Questions Answered
 
@@ -52,9 +56,11 @@ Public Olist Brazilian E-Commerce dataset, structured into a MySQL schema with t
 
 ## 📁 Files
 
-- `amazon_queries.sql` — all 14 queries with supporting views
+- `Analysis/Cleaned Data` — all 14 queries with supporting views
+- `Analysis/Raw File` — link to the full dataset on Kaggle
 
 ## 👤 Author
+Hiten Solanki BCom student | Data Analytics + Gen AI learner | Building toward a Business Analyst role 🔗 github.com/hiten-ux
 
 **Hiten Solanki**
 BCom student | Data Analytics + Gen AI learner | Building toward a Business Analyst role
